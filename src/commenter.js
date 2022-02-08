@@ -81,10 +81,11 @@ function addLeadingComments(target, dfnBlocks) {
         if (block.type === 'method' || block.type === 'attribute' || block.type === 'dict-member') {
             const matcher = block.type === 'method' ? matchMethodExp : matchAttributeExp;
             let commentDefinition = null;
+
             for (const line of block.lines) {
                 const memberName = matcher(line);
                 if (memberName) {
-                    const member = target.members.find(m => m.name.escapedText === memberName[1] && !memberSet.has(m));
+                    const member = target.members.find(m => m.name?.escapedText === memberName[1] && !memberSet.has(m));
                     if (member) {
                         commentDefinition = {
                             member,
@@ -99,7 +100,7 @@ function addLeadingComments(target, dfnBlocks) {
                 }
             }
         } else {
-            console.log(`UNRECOGNIZED DFN BLOCK TYPE: ${block.type} [${block.target}]`);
+            console.log(`WARNING! SKIPPING LEADING COMMENT FOR UNRECOGNIZED DFN BLOCK TYPE: ${block.type} [${block.target}]`);
         }
     }
 
