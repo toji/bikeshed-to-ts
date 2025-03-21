@@ -1,9 +1,42 @@
-const {readFileLines} = require('./reader.js');
-const {matchEndDFN, matchEndIDL, matchStartDFN, matchStartIDL} = require('./regex.js');
-const {parse: parseIDL} = require('webidl2');
-const {convertIDL} = require('webidl2ts');
+const fs = require('node:fs');
+const readline = require('node:readline');
+const path = require('node:path');
+const { matchEndDFN, matchEndIDL, matchStartDFN, matchStartIDL } = require('./regex.js');
+const { assert } = require('./util.js');
+const { parse: parseIDL } = require('webidl2');
+const { convertIDL } = require('webidl2ts');
 
-async function parseBikeShedFile(filePath) {
+async function* readBikeshedWithIncludes(filePath) {
+    const rl = readline.createInterface({
+        input: fs.createReadStream(filePath),
+        crlfDelay: Infinity
+    });
+
+    let processingInclude = 'no';
+    for await (const line of rl) {
+        switch (processingInclude) {
+            case 'no': {
+                if (line === '<pre class=include>') {
+                    processingInclude = 'started';
+                } else {
+                    yield line;
+                }
+            } break;
+            case 'started': {
+                assert(line.startsWith('path: '));
+                const include = path.join(path.dirname(filePath), line.slice(6));
+                yield* readBikeshedWithIncludes(include);
+                processingInclude = 'done';
+            } break;
+            case 'done': {
+                assert(line === '</pre>');
+                processingInclude = 'no';
+            } break;
+        }
+    }
+}
+
+async function parseBikeshedFile(filePath) {
     const exposed = new Set();
 
     const dfnBlocks = new Map();
@@ -12,8 +45,8 @@ async function parseBikeShedFile(filePath) {
     let idlRecording = null;
     let dfnRecording = null;
 
-    await readFileLines(filePath, line => {
-        /* DNF Matching */
+    for await (const line of readBikeshedWithIncludes(filePath)) {
+        /* DFN Matching */
         const dfnMatch = matchStartDFN(line);
         if (dfnMatch) {
             dfnRecording = {
@@ -21,7 +54,7 @@ async function parseBikeShedFile(filePath) {
                 type: dfnMatch[1],
                 lines: [],
             }
-            return;
+            continue;
         }
 
         if (dfnRecording && matchEndDFN(line)) {
@@ -30,18 +63,18 @@ async function parseBikeShedFile(filePath) {
             }
             dfnBlocks.get(dfnRecording.target).push(dfnRecording);
             dfnRecording = null;
-            return;
+            continue;
         }
 
         if (dfnRecording) {
             dfnRecording.lines.push(line);
-            return;
+            continue;
         }
 
         /* IDL Matching */
         if (matchStartIDL(line)) {
             idlRecording = [];
-            return;
+            continue;
         }
 
         if (idlRecording && matchEndIDL(line)) {
@@ -66,13 +99,13 @@ async function parseBikeShedFile(filePath) {
                     tsBlocks.get(node.name.escapedText).push(node);
                 }
             }
-            return;
+            continue;
         }
 
         if (idlRecording) {
             idlRecording.push(line);
         }
-    });
+    }
 
     return {
         dfn: dfnBlocks,
@@ -93,6 +126,6 @@ function isExposed(idlNode) {
 }
 
 module.exports = {
-    parseBikeShedFile,
+    parseBikeshedFile,
     isExposed,
 };

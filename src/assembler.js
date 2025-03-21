@@ -1,7 +1,7 @@
 const {addLeadingComments} = require('./commenter.js');
 const ts = require('typescript');
 const {printTs: printTS} = require('webidl2ts');
-const {parseBikeShedFile} = require('./parser.js');
+const {parseBikeshedFile} = require('./parser.js');
 
 function consolidateTypeTS(tsBlock) {
     const final = tsBlock[0];
@@ -270,7 +270,7 @@ function printNodes(nodes) {
 }
 
 async function assembleFile(filePath, forceGlobal, safeNominalTypes) {
-    const blocks = await parseBikeShedFile(filePath);
+    const blocks = await parseBikeshedFile(filePath);
     const nodes = assembleBlocks(blocks, forceGlobal, safeNominalTypes);
     
     return printNodes(nodes);
