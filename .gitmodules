@@ -1,0 +1,3 @@
+[submodule "third_party/webidl2ts"]
+	path = third_party/webidl2ts
+	url = https://github.com/toji/webidl2ts.git
