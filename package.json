@@ -1,7 +1,6 @@
 {
   "name": "bikeshed-to-ts",
-  "version": "1.2.0",
-  "description": "Extract a TypeScript declaration file from a bikeshed document.",
+  "description": "Extract a TypeScript declaration file from the WebGPU bikeshed source.",
   "main": "src/assembler.js",
   "repository": "https://github.com/darionco/bikeshed-to-ts.git",
   "author": "Dario Segura <dario.seco@gmail.com>",
