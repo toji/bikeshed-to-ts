@@ -1,10 +1,11 @@
 const fs = require('node:fs');
 const readline = require('node:readline');
 const path = require('node:path');
+const webidl2 = require('webidl2');
+const webidl2ts = require('webidl2ts');
+
 const { matchEndDFN, matchEndIDL, matchStartDFN, matchStartIDL } = require('./regex.js');
 const { assert } = require('./util.js');
-const { parse: parseIDL } = require('webidl2');
-const { convertIDL } = require('webidl2ts');
 
 async function* readBikeshedWithIncludes(filePath) {
     const rl = readline.createInterface({
@@ -81,14 +82,14 @@ async function parseBikeshedFile(filePath) {
             const idlText = idlRecording.join('\n');
             idlRecording = null;
 
-            const idlBlock = parseIDL(idlText);
+            const idlBlock = webidl2.parse(idlText);
             for (const idlNode of idlBlock) {
                 if (isExposed(idlNode)) {
                     exposed.add(idlNode.name);
                 }
             }
 
-            const tsNodes = convertIDL(idlBlock, {});
+            const tsNodes = webidl2ts.convertIDL(idlBlock, {});
             for (let i = 0, n = tsNodes.length; i < n; ++i) {
                 const node = tsNodes[i];
                 if (node.name) {

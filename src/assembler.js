@@ -1,7 +1,8 @@
-const {addLeadingComments} = require('./commenter.js');
 const ts = require('typescript');
-const {printTs: printTS} = require('webidl2ts');
-const {parseBikeshedFile} = require('./parser.js');
+const webidl2ts = require('webidl2ts');
+
+const { addLeadingComments } = require('./commenter.js');
+const { parseBikeshedFile } = require('./parser.js');
 
 function consolidateTypeTS(tsBlock) {
     const final = tsBlock[0];
@@ -44,7 +45,7 @@ function addNominalIdentifier(node) {
 
     const __brand = ts.factory.createPropertyDeclaration(
         /*decorators*/ undefined,
-        /*modifiers*/ [ts.factory.createToken(ts.SyntaxKind.ReadonlyKeyword)],
+        /*modifiers*/[ts.factory.createToken(ts.SyntaxKind.ReadonlyKeyword)],
         '__brand',
         undefined,
         ts.factory.createStringLiteral(node.name.escapedText, true),
@@ -110,7 +111,7 @@ function assembleNodes(local, global) {
     if (global.length) {
         ret.push(ts.factory.createModuleDeclaration(
             /*decorators*/ undefined,
-            /*modifiers*/ [ts.factory.createToken(ts.SyntaxKind.DeclareKeyword)],
+            /*modifiers*/[ts.factory.createToken(ts.SyntaxKind.DeclareKeyword)],
             ts.factory.createIdentifier('global'),
             ts.factory.createModuleBlock(global),
             ts.NodeFlags.GlobalAugmentation
@@ -259,10 +260,10 @@ function printNodes(nodes) {
     let result = '';
     let hasNewLine = false;
     for (const node of nodes) {
-        const text = printTS([node]);
+        const text = webidl2ts.printTs([node]);
         const lines = text.split('\n');
 
-        result += `${lines.length > 1 && !hasNewLine ? '\n' : ''}${printTS([node])}\n${lines.length > 1 ? '\n' : ''}`;
+        result += `${lines.length > 1 && !hasNewLine ? '\n' : ''}${webidl2ts.printTs([node])}\n${lines.length > 1 ? '\n' : ''}`;
 
         hasNewLine = lines.length > 1;
     }
@@ -272,7 +273,7 @@ function printNodes(nodes) {
 async function assembleFile(filePath, forceGlobal, safeNominalTypes) {
     const blocks = await parseBikeshedFile(filePath);
     const nodes = assembleBlocks(blocks, forceGlobal, safeNominalTypes);
-    
+
     return printNodes(nodes);
 }
 

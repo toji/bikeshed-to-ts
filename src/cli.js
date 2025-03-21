@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-const {assembleFile} = require('./assembler.js');
 const fs = require('fs');
 const path = require('path');
 const yargs = require('yargs');
+
+const { assembleFile } = require('./assembler.js');
 
 function printHelp() {
     console.log(`\n  Usage: bikeshed-to-ts --in <file-path> --out <file-path> [flags]\n`);
@@ -35,7 +36,7 @@ async function main(options) {
     // try to create the path to the file
     try {
         await fs.promises.mkdir(path.dirname(options.out), { recursive: true });
-    } catch(e) {
+    } catch (e) {
         console.error(e);
     }
 

@@ -1,3 +1,5 @@
+const ts = require('typescript');
+
 const {
     cleanString,
     matchAttributeExp,
@@ -6,7 +8,6 @@ const {
     matchXMLBlockEndExp,
     matchXMLBlockStartExp
 } = require('./regex.js');
-const ts = require('typescript');
 
 function makeXMLBlock(matchResult) {
     return {
