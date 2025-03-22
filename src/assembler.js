@@ -173,44 +173,30 @@ function findMemberByName(source, name) {
     return null;
 }
 
-function copyConstantMembers(source, target) {
-    for (const idl of source.__idl) {
-        if (idl.members) {
-            for (const member of idl.members) {
-                if (member.type === 'const') {
-                    const tsMember = findMemberByName(source, member.name);
-                    if (tsMember) {
-                        target.members.push(tsMember);
-                    }
+function makeGlobalDeclaration(node) {
+    if (node.type) return [node];
+
+    switch (getIDLType(node.__idl)) {
+        case 'interface': {
+
+            const varNode = ts.factory.createVariableDeclaration(node.name.escapedText);
+            varNode.type = ts.factory.createTypeLiteralNode([]);
+
+            let hasConstructor = false;
+            for (let i = node.members.length - 1; i >= 0; --i) {
+                const member = node.members[i];
+                if (member.kind === ts.SyntaxKind.ConstructSignature) {
+                    hasConstructor = true;
+                    member.type = ts.factory.createTypeReferenceNode(node.name.escapedText);
+                    varNode.type.members.push(member);
+                    node.members.splice(i, 1);
                 }
             }
-        }
-    }
-}
-
-function makeGlobalDeclaration(node) {
-    const result = [node];
-    const idlType = getIDLType(node.__idl);
-    if (['interface', 'namespace'].includes(idlType) && !node.type) {
-        const varNode = ts.factory.createVariableDeclaration(node.name.escapedText);
-        varNode.type = ts.factory.createTypeLiteralNode([]);
-
-        let hasConstructor = false;
-        for (let i = node.members.length - 1; i >= 0; --i) {
-            const member = node.members[i];
-            if (member.kind === ts.SyntaxKind.ConstructSignature) {
-                hasConstructor = true;
-                member.type = ts.factory.createTypeReferenceNode(node.name.escapedText);
-                varNode.type.members.push(member);
-                node.members.splice(i, 1);
+            if (!hasConstructor) {
+                varNode.type.members.unshift(
+                    ts.factory.createConstructSignature([], [], ts.factory.createTypeReferenceNode('never'))
+                );
             }
-        }
-        if (!hasConstructor) {
-            varNode.type.members.unshift(
-                ts.factory.createConstructSignature([], [], ts.factory.createTypeReferenceNode('never'))
-            );
-        }
-        if (idlType === 'interface') {
             varNode.type.members.unshift(
                 ts.factory.createPropertySignature(
                     undefined,
@@ -218,19 +204,27 @@ function makeGlobalDeclaration(node) {
                     undefined,
                     ts.factory.createTypeReferenceNode(node.name.escapedText)
                 ));
+
+            const varDeclaration = ts.factory.createVariableStatement(
+                [ts.createModifier(ts.SyntaxKind.DeclareKeyword)],
+                [varNode]
+            );
+            varDeclaration.__idl = node.__idl;
+
+            return [node, varDeclaration];
         }
+        case 'namespace': {
+            const varNode = ts.factory.createVariableDeclaration(node.name.escapedText, undefined, node.name);
 
-        copyConstantMembers(node, varNode.type);
-
-        const varDeclaration = ts.factory.createVariableStatement(
-            [ts.createModifier(ts.SyntaxKind.DeclareKeyword)],
-            [varNode]
-        );
-        varDeclaration.__idl = node.__idl;
-
-        result.push(varDeclaration);
+            const varDeclaration = ts.factory.createVariableStatement(
+                [ts.createModifier(ts.SyntaxKind.DeclareKeyword)],
+                [varNode]
+            );
+            varDeclaration.__idl = node.__idl;
+            return [node, varDeclaration];
+        }
     }
-    return result;
+    return [node];
 }
 
 function assembleBlocks(blocks, forceGlobal, safeNominalTypes = false) {
