@@ -193,23 +193,31 @@ function makeGlobalDeclaration(node) {
     const idlType = getIDLType(node.__idl);
     if (['interface', 'namespace'].includes(idlType) && !node.type) {
         const varNode = ts.factory.createVariableDeclaration(node.name.escapedText);
-        const members = idlType === 'interface' ? [
-            ts.factory.createPropertySignature(
-                undefined,
-                'prototype',
-                undefined,
-                ts.factory.createTypeReferenceNode(node.name.escapedText)
-            ),
-            ts.factory.createConstructSignature([], [], ts.factory.createTypeReferenceNode('never'))
-        ] : [];
-        varNode.type = ts.factory.createTypeLiteralNode(members);
+        varNode.type = ts.factory.createTypeLiteralNode([]);
 
+        let hasConstructor = false;
         for (let i = node.members.length - 1; i >= 0; --i) {
             const member = node.members[i];
             if (member.kind === ts.SyntaxKind.ConstructSignature) {
+                hasConstructor = true;
+                member.type = ts.factory.createTypeReferenceNode(node.name.escapedText);
                 varNode.type.members.push(member);
                 node.members.splice(i, 1);
             }
+        }
+        if (!hasConstructor) {
+            varNode.type.members.unshift(
+                ts.factory.createConstructSignature([], [], ts.factory.createTypeReferenceNode('never'))
+            );
+        }
+        if (idlType === 'interface') {
+            varNode.type.members.unshift(
+                ts.factory.createPropertySignature(
+                    undefined,
+                    'prototype',
+                    undefined,
+                    ts.factory.createTypeReferenceNode(node.name.escapedText)
+                ));
         }
 
         copyConstantMembers(node, varNode.type);
