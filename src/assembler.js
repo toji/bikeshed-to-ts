@@ -53,10 +53,7 @@ function addNominalIdentifier(node) {
     );
 
     const comment =
-        '*\n ' +
-        ' * Nominal type branding.\n ' +
-        ' * https://github.com/microsoft/TypeScript/pull/33038\n ' +
-        ' * @internal\n ';
+        '* @internal Workaround for [nominal typing](https://github.com/microsoft/TypeScript/pull/33038). ';
     ts.addSyntheticLeadingComment(__brand, ts.SyntaxKind.MultiLineCommentTrivia, comment, true);
 
     node.members.unshift(__brand);
