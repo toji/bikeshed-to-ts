@@ -24,7 +24,7 @@
   "dependencies": {
     "typescript": "=4.2.4",
     "webidl2": "^24.2.0",
-    "webidl2ts": "github:toji/webidl2ts",
+    "webidl2ts": "github:toji/webidl2ts#9596655fbb3fd6147e1990304c7aa7b84ae0b71b",
     "yargs": "^16.2.0"
   }
 }
