@@ -190,16 +190,19 @@ function copyConstantMembers(source, target) {
 
 function makeGlobalDeclaration(node) {
     const result = [node];
-    if (getIDLType(node.__idl) === 'interface' && !node.type) {
+    const idlType = getIDLType(node.__idl);
+    if (['interface', 'namespace'].includes(idlType) && !node.type) {
         const varNode = ts.factory.createVariableDeclaration(node.name.escapedText);
-        varNode.type = ts.factory.createTypeLiteralNode([
+        const members = idlType === 'interface' ? [
             ts.factory.createPropertySignature(
                 undefined,
                 'prototype',
                 undefined,
                 ts.factory.createTypeReferenceNode(node.name.escapedText)
             ),
-        ]);
+            ts.factory.createConstructSignature([], [], ts.factory.createTypeReferenceNode('never'))
+        ] : [];
+        varNode.type = ts.factory.createTypeLiteralNode(members);
 
         for (let i = node.members.length - 1; i >= 0; --i) {
             const member = node.members[i];

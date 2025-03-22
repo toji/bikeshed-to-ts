@@ -59,6 +59,7 @@ function matchXMLBlockEndExp(str) {
     return str.match(kXMLBlockEndExp);
 }
 
+// TODO: Upstream fixes from fix-generated-comments.mjs
 function cleanString(str) {
     // they must run in this order
     let ret = str;
